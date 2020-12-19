@@ -1,0 +1,217 @@
+apply plugin: 'com.android.application'
+apply plugin: 'checkstyle'
+apply plugin: 'pmd'
+
+def isCi = "true".equals(System.getenv("CI"))
+def preDexEnabled = "true".equals(System.getProperty("pre-dex", "true"))
+
+def fullApplicationId = "org.fdroid.kekstore"
+def basicApplicationId = "org.fdroid.basic"
+// yes, this actually needs both quotes https://stackoverflow.com/a/41391841
+def privilegedExtensionApplicationId = '"org.fdroid.kekstore.privileged"'
+
+android {
+    signingConfigs {
+        release {
+            keyAlias ''
+            storePassword ''
+            keyPassword ''
+            storeFile file('')
+        }
+    }
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
+
+    defaultConfig {
+        versionCode 100
+        versionName "1.0.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        /*
+          The Android Testing Support Library collects analytics to continuously improve the testing
+          experience. More specifically, it uploads a hash of the package name of the application
+          under test for each invocation. If you do not wish to upload this data, you can opt-out by
+          passing the following argument to the test runner: disableAnalytics "true".
+         */
+        testInstrumentationRunnerArguments disableAnalytics: 'true'
+    }
+
+    buildTypes {
+        // use proguard on debug too since we have unknowingly broken
+        // release builds before.
+        all {
+            minifyEnabled true
+            useProguard true
+            shrinkResources true
+            buildConfigField "String", "PRIVILEGED_EXTENSION_PACKAGE_NAME", privilegedExtensionApplicationId
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            testProguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'src/androidTest/proguard-rules.pro'
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            resValue "string", "applicationId", fullApplicationId + applicationIdSuffix
+            versionNameSuffix "-debug"
+            println 'buildTypes.debug defaultConfig.versionCode ' + defaultConfig.versionCode
+        }
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    flavorDimensions "base"
+    productFlavors {
+        full {
+            dimension "base"
+            applicationId fullApplicationId
+            resValue "string", "applicationId", fullApplicationId
+        }
+        basic {
+            dimension "base"
+            applicationId basicApplicationId
+            resValue "string", "applicationId", basicApplicationId
+        }
+    }
+
+    compileOptions {
+        compileOptions.encoding = "UTF-8"
+    }
+
+    aaptOptions {
+        cruncherEnabled = false
+    }
+
+    dexOptions {
+        // Improve build server performance by allowing disabling of pre-dexing
+        // see http://tools.android.com/tech-docs/new-build-system/tips#TOC-Improving-Build-Server-performance
+        // Skip pre-dexing when running on CI or when disabled via -Dpre-dex=false.
+        preDexLibraries = preDexEnabled && !isCi
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            // prevent tests from dying on android.util.Log calls
+            returnDefaultValues = true
+            all {
+                // All the usual Gradle options.
+                testLogging {
+                    events "skipped", "failed", "standardOut", "standardError"
+                    showStandardStreams = true
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        test {
+            java.srcDirs += "$projectDir/src/testShared/java"
+        }
+
+        androidTest {
+            java.srcDirs += "$projectDir/src/testShared/java"
+        }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError true
+
+        htmlReport true
+        xmlReport false
+        textReport false
+
+        lintConfig file("lint.xml")
+    }
+
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/INDEX.LIST'
+        exclude '.readme'
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:support-v4:27.1.1'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:gridlayout-v7:27.1.1'
+    implementation 'com.android.support:support-annotations:27.1.1'
+    implementation 'com.android.support:recyclerview-v7:27.1.1'
+    implementation 'com.android.support:cardview-v7:27.1.1'
+    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support:support-vector-drawable:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.android.support:palette-v7:27.1.1'
+    implementation 'com.android.support:preference-v14:27.1.1'
+
+    implementation 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+    implementation 'com.google.zxing:core:3.3.3'
+    implementation 'info.guardianproject.netcipher:netcipher:2.0.0-beta1'
+    implementation 'info.guardianproject.panic:panic:0.5'
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'commons-net:commons-net:3.6'
+    implementation 'ch.acra:acra:4.9.1'
+    implementation 'io.reactivex:rxjava:1.1.0'
+    implementation 'com.hannesdorfmann:adapterdelegates3:3.0.1'
+    implementation 'com.ashokvarma.android:bottom-navigation-bar:2.0.5'
+
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
+
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.60'
+    fullImplementation 'org.bouncycastle:bcpkix-jdk15on:1.60'
+    fullImplementation 'cc.mvdan.accesspoint:library:0.2.0'
+    fullImplementation 'org.jmdns:jmdns:3.5.5'
+    fullImplementation 'org.nanohttpd:nanohttpd:2.3.1'
+
+    testImplementation 'org.robolectric:robolectric:3.8'
+    testImplementation "com.android.support.test:monitor:1.0.2"
+    testImplementation 'org.bouncycastle:bcprov-jdk15on:1.60'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:2.7.22'
+
+    androidTestImplementation 'com.android.support:support-annotations:27.1.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation 'com.android.support.test.uiautomator:uiautomator-v18:2.1.3'
+}
+
+checkstyle {
+    toolVersion = '7.2'
+}
+
+task checkstyle(type: Checkstyle) {
+    configFile file("${project.rootDir}/config/checkstyle/checkstyle.xml")
+    source 'src/main/java', 'src/test/java', 'src/androidTest/java'
+    include '**/*.java'
+
+    classpath = files()
+}
+
+pmd {
+    toolVersion = '5.5.1'
+    consoleOutput = true
+}
+
+task pmdMain(type: Pmd) {
+    dependsOn 'assembleDebug'
+    ruleSetFiles = files("${project.rootDir}/config/pmd/rules.xml", "${project.rootDir}/config/pmd/rules-main.xml")
+    ruleSets = [] // otherwise defaults clash with the list in rules.xml
+    source 'src/main/java'
+    include '**/*.java'
+    exclude '**/kellinwood/**/*.java'
+}
+
+task pmdTest(type: Pmd) {
+    dependsOn 'assembleDebug'
+    ruleSetFiles = files("${project.rootDir}/config/pmd/rules.xml", "${project.rootDir}/config/pmd/rules-test.xml")
+    ruleSets = [] // otherwise defaults clash with the list in rules.xml
+    source 'src/test/java', 'src/androidTest/java'
+    include '**/*.java'
+}
+
+task pmd(dependsOn: [pmdMain, pmdTest]) {}
