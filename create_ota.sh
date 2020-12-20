@@ -45,7 +45,7 @@ if [ $VARIANT == "binary" ] ; then
         curl -L https://f-droid.org/${FDROID_APK}.asc > $TMP_DIR/${FDROID_APK}.asc
     else
         GITVERSION=$VERSIONCODE
-        DL_APK=org.fdroid.fdroid_${VERSIONCODE}.apk
+        DL_APK=org.fdroid.kekstore_${VERSIONCODE}.apk
         curl -L https://f-droid.org/repo/$DL_APK > $TMP_DIR/$FDROID_APK
         curl -L https://f-droid.org/repo/${DL_APK}.asc > $TMP_DIR/${FDROID_APK}.asc
     fi

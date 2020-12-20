@@ -30,7 +30,6 @@ import org.fdroid.kekstore.R;
 import org.fdroid.kekstore.data.InstalledAppProvider;
 import org.fdroid.kekstore.data.Schema.InstalledAppTable;
 import org.fdroid.kekstore.localrepo.LocalRepoService;
-import org.fdroid.kekstore.localrepo.SwapService;
 import org.fdroid.kekstore.localrepo.SwapView;
 
 public class SelectAppsView extends SwapView implements LoaderManager.LoaderCallbacks<Cursor> {
