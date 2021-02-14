@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+
+    <integer name="unhidePin">1337</integer>
+
+    <declare-styleable name="SwapView">
+        <attr name="toolbarColor" format="color"/>
+        <attr name="toolbarTitle" format="string"/>
+    </declare-styleable>
+</resources>
